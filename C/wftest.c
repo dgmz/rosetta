@@ -19,5 +19,10 @@ int main(void)
 	assert(fequal(-0.734665, v->y));
 	assert(fequal(-0.623267, v->z));
 	assert(fequal(1.0, v->w));
+	v = &model->vertices[model->nvertices - 1];
+	assert(fequal(-0.171097, v->x));
+	assert(fequal(0.299996, v->y));
+	assert(fequal(0.415616, v->z));
+	assert(fequal(1.0, v->w));
 	return 0;
 }
