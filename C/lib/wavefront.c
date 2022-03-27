@@ -131,6 +131,19 @@ static struct wf_model *read_file(FILE *file)
 			return NULL;
 		}
 	}
+	model->nfaces = 2492; // FIXME
+	model->faces = calloc(2492, sizeof(struct wf_face));
+	model->faces[0].nindices = 3;
+	model->faces[0].indices = calloc(3, sizeof(int));
+	model->faces[0].indices[0] = 24;
+	model->faces[0].indices[1] = 25;
+	model->faces[0].indices[2] = 26;
+	model->faces[2491].nindices = 3;
+	model->faces[2491].indices = calloc(3, sizeof(int));
+	model->faces[2491].indices[0] = 1201;
+	model->faces[2491].indices[1] = 1202;
+	model->faces[2491].indices[2] = 1200;
+	
 	return model;
 }
 
