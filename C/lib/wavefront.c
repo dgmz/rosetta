@@ -17,6 +17,7 @@ static int parse_vertex(const char *line, struct wf_vertex *v)
 	return 3 == n || 4 == n;
 }
 
+/*
 static int parse_face(char *line, int *indices, int max_indices)
 {
 	int index;
@@ -84,6 +85,12 @@ static int parse_face(char *line, struct wf_face *face)
 	}
 	return 1;
 }
+*/
+
+static int parse_face(char *line, struct wf_face *face)
+{
+	return 0;
+}
 
 static int parse_line(char *line, struct wf_model *model)
 {
@@ -103,7 +110,6 @@ static int parse_line(char *line, struct wf_model *model)
 	}
 	int nindices 
 	if (parse_face(line, &face)) {
-		
 		return 1;
 	}
 	return 0;

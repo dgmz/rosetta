@@ -15,9 +15,9 @@ int main(void)
 	assert(1 == model->nvertices);
 	assert(model->vertices);
 	struct wf_vertex *v = &model->vertices[0];
-	assert(fequal(0.1, v->x));
-	assert(fequal(0.2, v->y));
-	assert(fequal(0.3, v->z));
+	assert(fequal(-0.000581696, v->x));
+	assert(fequal(-0.734665, v->y));
+	assert(fequal(-0.623267, v->z));
 	assert(fequal(1.0, v->w));
 	return 0;
 }
