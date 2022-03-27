@@ -12,7 +12,7 @@ int main(void)
 	struct wf_model *model = NULL;
 	model = wf_read("african_head.obj");
 	assert(model);
-	assert(1 == model->nvertices);
+	assert(1258 == model->nvertices);
 	assert(model->vertices);
 	struct wf_vertex *v = &model->vertices[0];
 	assert(fequal(-0.000581696, v->x));

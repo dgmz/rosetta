@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+#include <errno.h>
 
 #include "wavefront.h"
 
@@ -13,7 +14,6 @@ static int parse_vertex(const char *line, struct wf_vertex *v)
 	assert(v);
 	v->w = 1.0;
 	n = sscanf(line, " v %f %f %f %f", &v->x, &v->y, &v->z, &v->w);
-	printf("n:%d\n", n);
 	return 3 == n || 4 == n;
 }
 
@@ -103,12 +103,11 @@ static int parse_line(char *line, struct wf_model *model)
 		if (!vertices) {
 			return 0;
 		}
-		memcpy(&vertices[model->nvertices], vertex, sizeof(struct wf_vertex));
+		memcpy(&vertices[model->nvertices], &vertex, sizeof(struct wf_vertex));
 		model->vertices = vertices;
 		model->nvertices++;
 		return 1;
 	}
-	int nindices 
 	if (parse_face(line, &face)) {
 		return 1;
 	}
@@ -125,8 +124,9 @@ static struct wf_model *read_file(FILE *file)
 	if (!model) {
 		return NULL;
 	}
-	while (-1 != readline(&line, &line_size, file)) {
-		if (!parse_line(line, model)) {
+	while (-1 != getline(&line, &line_size, file)) {
+		if (!parse_line(line, model) && errno) {
+			perror("");
 			wf_free(model);
 			return NULL;
 		}
