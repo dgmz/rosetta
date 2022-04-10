@@ -4,8 +4,18 @@
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
+#include <ctype.h>
 
 #include "wavefront.h"
+
+static const char *skip_space(const char *s)
+{
+	assert(s);
+	while (isspace(*s)) {
+		s++;
+	}
+	return s;
+}
 
 static int parse_vertex(const char *line, struct wf_vertex *v)
 {
@@ -97,19 +107,23 @@ static int parse_line(char *line, struct wf_model *model)
 	struct wf_vertex vertex;
 	struct wf_face face;
 	
-	if (parse_vertex(line, &vertex)) {
-		size_t new_size = (model->nvertices + 1) * sizeof(struct wf_vertex);
-		struct wf_vertex *vertices = realloc(model->vertices, new_size);
-		if (!vertices) {
-			return 0;
+	line = (char *)skip_space(line);
+	if ('v' == *line) {
+		if (parse_vertex(line, &vertex)) {
+			size_t new_size = (model->nvertices + 1) * sizeof(struct wf_vertex);
+			struct wf_vertex *vertices = realloc(model->vertices, new_size);
+			if (!vertices) {
+				return 0;
+			}
+			memcpy(&vertices[model->nvertices], &vertex, sizeof(struct wf_vertex));
+			model->vertices = vertices;
+			model->nvertices++;
+			return 1;
 		}
-		memcpy(&vertices[model->nvertices], &vertex, sizeof(struct wf_vertex));
-		model->vertices = vertices;
-		model->nvertices++;
-		return 1;
-	}
-	if (parse_face(line, &face)) {
-		return 1;
+	} else if ('f' == *line) {
+		if (parse_face(line, &face)) {
+			return 1;
+		}
 	}
 	return 0;
 }
@@ -164,6 +178,12 @@ void wf_free(struct wf_model *model)
 {
 	if (model) {
 		free(model->vertices);
+		if (model->faces) {
+			for (int i = 0; i < model->nfaces; i++) {
+				free(model->faces[i].indices);
+			}
+			free(model->faces);
+		}
 	}
 	free(model);
 }
