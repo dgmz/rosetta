@@ -8,13 +8,27 @@
 
 #include "wavefront.h"
 
-static const char *skip_space(const char *s)
+static void skip_space(char **s)
 {
 	assert(s);
-	while (isspace(*s)) {
-		s++;
+	while (isspace(**s)) {
+		(*s)++;
 	}
-	return s;
+}
+
+static int read_int(char **s, long *v)
+{
+	return 0;
+}
+
+static int read_float(char **s, double *v)
+{
+	return 0;
+}
+
+static int read_string(char **s, size_t *l)
+{
+	return 0;
 }
 
 static int parse_vertex(const char *line, struct wf_vertex *v)
@@ -97,31 +111,53 @@ static int parse_face(char *line, struct wf_face *face)
 }
 */
 
-static int parse_face(char *line, struct wf_face *face)
+static int parse_face_index(char *line, struct wf_face *face)
 {
 	return 0;
 }
 
+static int parse_face(char *line, struct wf_face *face)
+{
+	assert(line);
+	assert(face);
+	assert('f' == *line);
+	
+	face->nindices = 3;
+	face->indices = calloc(3, sizeof(int));
+	face->indices[0] = 24;
+	face->indices[1] = 25;
+	face->indices[2] = 26;
+	return 1;
+}
+
 static int parse_line(char *line, struct wf_model *model)
 {
-	struct wf_vertex vertex;
-	struct wf_face face;
+	assert(line);
+	assert(model);
 	
-	line = (char *)skip_space(line);
+	size_t new_size;
+	
+	skip_space(&line);
 	if ('v' == *line) {
-		if (parse_vertex(line, &vertex)) {
-			size_t new_size = (model->nvertices + 1) * sizeof(struct wf_vertex);
-			struct wf_vertex *vertices = realloc(model->vertices, new_size);
-			if (!vertices) {
-				return 0;
-			}
-			memcpy(&vertices[model->nvertices], &vertex, sizeof(struct wf_vertex));
+		new_size = (model->nvertices + 1) * sizeof(struct wf_vertex);
+		struct wf_vertex *vertices = realloc(model->vertices, new_size);
+		if (!vertices) {
+			return 0;
+		}
+		if (parse_vertex(line, &vertices[model->nvertices])) {
 			model->vertices = vertices;
 			model->nvertices++;
 			return 1;
 		}
 	} else if ('f' == *line) {
-		if (parse_face(line, &face)) {
+		new_size = (model->nfaces + 1) * sizeof(struct wf_face);
+		struct wf_face *faces = realloc(model->faces, new_size);
+		if (!faces) {
+			return 0;
+		}
+		if (parse_face(line, &faces[model->nfaces])) {
+			model->faces = faces;
+			model->nfaces++;
 			return 1;
 		}
 	}
@@ -145,13 +181,6 @@ static struct wf_model *read_file(FILE *file)
 			return NULL;
 		}
 	}
-	model->nfaces = 2492; // FIXME
-	model->faces = calloc(2492, sizeof(struct wf_face));
-	model->faces[0].nindices = 3;
-	model->faces[0].indices = calloc(3, sizeof(int));
-	model->faces[0].indices[0] = 24;
-	model->faces[0].indices[1] = 25;
-	model->faces[0].indices[2] = 26;
 	model->faces[2491].nindices = 3;
 	model->faces[2491].indices = calloc(3, sizeof(int));
 	model->faces[2491].indices[0] = 1201;
