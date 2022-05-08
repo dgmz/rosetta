@@ -4,11 +4,17 @@
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
-#include <ctype.h>
+//#include <ctype.h>
+#include <math.h>
 
 #include "wavefront.h"
 
-static void skip_space(char **s)
+static int isspace(char c)
+{
+	return ' ' == c || '\t' == c;
+}
+
+static void skip_space(const char **s)
 {
 	assert(s);
 	while (isspace(**s)) {
@@ -16,121 +22,103 @@ static void skip_space(char **s)
 	}
 }
 
-static int read_int(char **s, long *v)
+static double read_double(const char **s)
 {
-	return 0;
-}
-
-static int read_float(char **s, double *v)
-{
-	return 0;
-}
-
-static int read_string(char **s, size_t *l)
-{
-	return 0;
+	char next = **s;
+	if ('\r' != next && '\n' != next && '\0' != next) {
+		double d = strtod(*s, (char **)s);
+		if (ERANGE != errno) {
+			next = **s;
+			if (' ' == next || '\t' == next || '\0' == next || '\r' == next || '\n' == next) {
+				return d;
+			}
+		}
+		errno = 0;
+	}
+	return NAN;
 }
 
 static int parse_vertex(const char *line, struct wf_vertex *v)
 {
-	int n;
-	
+	double r;
+	assert(line);
 	assert(v);
-	v->w = 1.0;
-	n = sscanf(line, " v %f %f %f %f", &v->x, &v->y, &v->z, &v->w);
-	return 3 == n || 4 == n;
-}
-
-/*
-static int parse_face(char *line, int *indices, int max_indices)
-{
-	int index;
-	int i;
 	
-	assert(line);
-	assert(indices);
-	assert(max_indices);
-	FILE *stream = NULL;
-	i = 0;
-	stream = fmemopen(line, strlen(line), "r");
-	if (stream) {
-		if (1 == fscanf(stream, " f %d", &index)) {
-			indices[0] = index;
-			fscanf(stream, "/%*s");
-			for (i = 1; i < max_indices; i++) {
-				if (fscanf(stream, " %d", &index) != 1) {
-					break;
-				}
-				indices[i] = index;
-				fscanf(stream, "/%*s");
-			}
-		}
-		fclose(stream);
+	r = read_double(&line);
+	if (isnan(r)) {
+		return 0;
 	}
-	return i;
-}
-
-static int parse_face(char *line, struct wf_face *face)
-{
-	int index;
-	int i;
-	
-	assert(line);
-	assert(face);
-	assert(!face->indices);
-	assert(!face->nindices);
-	FILE *stream = NULL;
-	i = 0;
-	stream = fmemopen(line, strlen(line), "r");
-	if (stream) {
-		int index[3];
-		if (1 == fscanf(stream, " f %d %d %d", &index[0], &index[1], &index[2])) {
-			int *indices = malloc(sizeof(int) * 3);
-			if (!indices) {
-				fclose(stream);
-				return 0;
-			}
-			memcpy(indices, index, sizeof(index));
-			face->indices = indices;
-			face->nindices = 3;
-			fscanf(stream, "/%*s");
-			while (fscanf(stream, " %d", &index[0]) == 1) {
-				indices = realloc(face->indices, sizeof(int) * (face->nindices + 1));
-				if (!indices) {
-					fclose(stream);
-					return 0;
-				}
-				indices[face->nindices] = index[0];
-				face->nindices++;
-				fscanf(stream, "/%*s");
-			}
-		}
-		fclose(stream);
+	v->x = r;
+	r = read_double(&line);
+	if (isnan(r)) {
+		return 0;
+	}
+	v->y = r;
+	r = read_double(&line);
+	if (isnan(r)) {
+		return 0;
+	}
+	v->z = r;
+	r = read_double(&line);
+	if (isnan(r)) {
+		v->w = 1.0;
+	} else {
+		v->w = r;
 	}
 	return 1;
 }
-*/
 
-static int parse_face_index(char *line, struct wf_face *face)
+static int parse_face_index(const char **line, struct wf_face *face)
 {
+	long l;
+	int *indices;
+	char next;
+	
+	assert(line);
+	assert(face);
+	
+	next = (**line);
+	if ('\r' == next || '\n' == next || '\0' == next) {
+		return 0;
+	}
+	l = strtol(*line, (char **)line, 10);
+	if (ERANGE != errno) {
+		if (l == (int)l) {
+			indices = realloc(face->indices, (face->nindices + 1) * sizeof(int));
+			if (indices) {
+				indices[face->nindices] = (int)l;
+				face->indices = indices;
+				face->nindices++;
+				next = (**line);
+				if ('/' == next) {
+					strtol((*line) + 1, (char **)line, 10);
+				}
+				next = (**line);
+				if ('/' == next) {
+					strtol((*line) + 1, (char **)line, 10);
+				}
+				return 1;
+			}
+		}
+	}
+	errno = 0;
 	return 0;
 }
 
-static int parse_face(char *line, struct wf_face *face)
+static int parse_face(const char *line, struct wf_face *face)
 {
 	assert(line);
 	assert(face);
-	assert('f' == *line);
 	
-	face->nindices = 3;
-	face->indices = calloc(3, sizeof(int));
-	face->indices[0] = 24;
-	face->indices[1] = 25;
-	face->indices[2] = 26;
-	return 1;
+	while (parse_face_index(&line, face)) {
+	}
+	if ('\r' == *line || '\n' == *line || '\0' == *line || 2 < face->nindices) {
+		return 1;
+	}
+	return 0;
 }
 
-static int parse_line(char *line, struct wf_model *model)
+static int parse_line(const char *line, struct wf_model *model)
 {
 	assert(line);
 	assert(model);
@@ -144,7 +132,8 @@ static int parse_line(char *line, struct wf_model *model)
 		if (!vertices) {
 			return 0;
 		}
-		if (parse_vertex(line, &vertices[model->nvertices])) {
+		memset(&vertices[model->nvertices], 0, sizeof(struct wf_vertex));
+		if (parse_vertex(line+1, &vertices[model->nvertices])) {
 			model->vertices = vertices;
 			model->nvertices++;
 			return 1;
@@ -155,7 +144,8 @@ static int parse_line(char *line, struct wf_model *model)
 		if (!faces) {
 			return 0;
 		}
-		if (parse_face(line, &faces[model->nfaces])) {
+		memset(&faces[model->nfaces], 0, sizeof(struct wf_face));
+		if (parse_face(line+1, &faces[model->nfaces])) {
 			model->faces = faces;
 			model->nfaces++;
 			return 1;
@@ -167,25 +157,20 @@ static int parse_line(char *line, struct wf_model *model)
 static struct wf_model *read_file(FILE *file)
 {
 	struct wf_model *model;
-	char *line = NULL;
+	const char *line = NULL;
 	size_t line_size = 0;
 	
 	model = calloc(1, sizeof(struct wf_model));
 	if (!model) {
 		return NULL;
 	}
-	while (-1 != getline(&line, &line_size, file)) {
+	while (-1 != getline((char **)&line, &line_size, file)) {
 		if (!parse_line(line, model) && errno) {
 			perror("");
 			wf_free(model);
 			return NULL;
 		}
 	}
-	model->faces[2491].nindices = 3;
-	model->faces[2491].indices = calloc(3, sizeof(int));
-	model->faces[2491].indices[0] = 1201;
-	model->faces[2491].indices[1] = 1202;
-	model->faces[2491].indices[2] = 1200;
 	
 	return model;
 }
