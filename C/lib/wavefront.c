@@ -29,7 +29,8 @@ static double read_double(const char **s)
 		double d = strtod(*s, (char **)s);
 		if (ERANGE != errno) {
 			next = **s;
-			if (' ' == next || '\t' == next || '\0' == next || '\r' == next || '\n' == next) {
+			if (' ' == next || '\t' == next || '\0' == next 
+			|| '\r' == next || '\n' == next) {
 				return d;
 			}
 		}
@@ -84,7 +85,8 @@ static int parse_face_index(const char **line, struct wf_face *face)
 	l = strtol(*line, (char **)line, 10);
 	if (ERANGE != errno) {
 		if (l == (int)l) {
-			indices = realloc(face->indices, (face->nindices + 1) * sizeof(int));
+			indices = realloc(face->indices, (face->nindices + 1) 
+				* sizeof(int));
 			if (indices) {
 				indices[face->nindices] = (int)l;
 				face->indices = indices;
@@ -112,7 +114,8 @@ static int parse_face(const char *line, struct wf_face *face)
 	
 	while (parse_face_index(&line, face)) {
 	}
-	if ('\r' == *line || '\n' == *line || '\0' == *line || 2 < face->nindices) {
+	if ('\r' == *line || '\n' == *line || '\0' == *line 
+	|| 2 < face->nindices) {
 		return 1;
 	}
 	return 0;
