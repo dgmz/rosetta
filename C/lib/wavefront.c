@@ -201,6 +201,6 @@ void wf_free(struct wf_model *model)
 			}
 			free(model->faces);
 		}
+		free(model);
 	}
-	free(model);
 }
