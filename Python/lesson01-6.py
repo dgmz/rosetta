@@ -47,14 +47,17 @@ data = [
 ]
 model = wavefront.load_obj('african_head.obj')
 for face in model.polygons:
-	print("face: " + str(face))
+	#print("face: " + str(model.polygons.index(face)))
 	for j in range(3):
-		v0 = model.vertices[face[j][0]]
-		v1 = model.vertices[face[(j + 1) % 3][0]]
+		i0 = face[j][0]
+		i1 = face[(j + 1) % 3][0]
+		v0 = model.vertices[i0]
+		v1 = model.vertices[i1]
 		x0 = (v0[0] + 1) * (WIDTH - 1) / 2
 		y0 = (v0[1] + 1) * (HEIGHT - 1) / 2
 		x1 = (v1[0] + 1) * (WIDTH - 1) / 2
 		y1 = (v1[1] + 1) * (HEIGHT - 1) / 2
+		#print(f"{i0}-{i1} ({x0},{y0})-({x1},{y1})")
 		line(data, int(x0), int(y0), int(x1), int(y1), white)
 
 data = data[::-1] # flip vertically
