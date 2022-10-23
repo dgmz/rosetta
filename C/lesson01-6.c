@@ -65,10 +65,7 @@ int main(void)
 	for face in model.polygons:
 	*/
 	for (int i = 0; i < model->nfaces; i++) {
-		/*
-		print("face: " + str(face))
-		*/
-		printf("face: %d\n", i);
+		//printf("face: %d\n", i);
 		if (3 != model->faces[i].nindices) {
 			printf("wrong number of vertices\n");
 			continue;
@@ -87,12 +84,14 @@ int main(void)
 			*/ 
 			int v0, v1;
 			float x0, x1, y0, y1;
-			v0 = model->faces[i].indices[i];
-			v1 = model->faces[i].indices[(i + 1) % 3];
-			x0 = model->vertices[v0].x;
-			y0 = model->vertices[v0].y;
-			x1 = model->vertices[v1].x;
-			y1 = model->vertices[v1].y;
+			v0 = model->faces[i].indices[j] - 1;
+			v1 = model->faces[i].indices[(j + 1) % 3] - 1;
+			//printf ("%d-%d ", v0, v1);
+			x0 = (model->vertices[v0].x + 1) * (WIDTH - 1) / 2;
+			y0 = (model->vertices[v0].y + 1) * (HEIGHT - 1) / 2;
+			x1 = (model->vertices[v1].x + 1) * (WIDTH - 1) / 2;
+			y1 = (model->vertices[v1].y + 1) * (HEIGHT - 1) / 2;
+			//printf("(%f,%f)-(%f,%f)\n", x0, y0, x1, y1);
 			/*
 			line(data, int(x0), int(y0), int(x1), int(y1), white)
 			*/ 
@@ -101,13 +100,11 @@ int main(void)
 	}
 
 	/*
-	for (int i = 0; i < 1000*1000; i++) {
-		line(data, 13, 20, 80, 40, WHITE);
-		line(data, 20, 13, 40, 80, RED);
-		line(data, 80, 40, 13, 20, BLUE);
-	}
+	image = tga.Image(data)
+	image.save("lesson01-6.tga")
 	*/
-	tga_save("lesson01-5.tga", data, WIDTH, HEIGHT);
+	tga_save("lesson01-6.tga", data, WIDTH, HEIGHT);
+	
 	printf("DONE\n");
 	return 0;
 }
